@@ -55,7 +55,7 @@ add_subdirectory(src/utils)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/output/drivers")
 
-set(TARGET_NAME simplecontroller)
+set(TARGET_NAME simpletrackers)
 
 # This is the name of the driver according to SteamVR
 set(DRIVER_NAME "driver_${TARGET_NAME}")
@@ -63,12 +63,12 @@ set(DRIVER_NAME "driver_${TARGET_NAME}")
 project(${TARGET_NAME})
 
 add_library(${DRIVER_NAME} SHARED
-	src/hmd_driver_factory.cpp
-	src/device_provider.h
-	src/device_provider.cpp
-        src/controller_device_driver.h
-        src/controller_device_driver.cpp
-)
+        src/hmd_driver_factory.cpp
+        src/device_provider.h
+        src/device_provider.cpp
+        src/tracker_device_driver.h
+        src/tracker_device_driver.cpp
+        )
 
 # This is so we can build directly to "<binary_dir>/<target_name>/<platform>/<arch>/<driver_name>.<dll/so>"
 set_target_properties(${DRIVER_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TARGET_NAME}/bin/${ARCH_TARGET}>)

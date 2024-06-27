@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include "controller_device_driver.h"
 #include "openvr_driver.h"
+#include "tracker_device_driver.h"
 
 // make sure your class is publicly inheriting vr::IServerTrackedDeviceProvider!
 class MyDeviceProvider : public vr::IServerTrackedDeviceProvider
@@ -22,6 +22,5 @@ public:
 	void Cleanup() override;
 
 private:
-	std::unique_ptr<MyControllerDeviceDriver> my_left_controller_device_;
-	std::unique_ptr<MyControllerDeviceDriver> my_right_controller_device_;
+	std::vector< std::unique_ptr< MyTrackerDeviceDriver > > my_tracker_devices_;
 };

@@ -13,35 +13,27 @@ vr::EVRInitError MyDeviceProvider::Init( vr::IVRDriverContext *pDriverContext )
 	// OpenVR provides a macro to do this for us.
 	VR_INIT_SERVER_DRIVER_CONTEXT( pDriverContext );
 
-	// Let's add our controllers to the system.
-	// First, we need to actually instantiate our controller devices.
-	// We made the constructor take in a controller role, so let's pass their respective roles in.
-	my_left_controller_device_ = std::make_unique< MyControllerDeviceDriver >( vr::TrackedControllerRole_LeftHand );
-	my_right_controller_device_ = std::make_unique< MyControllerDeviceDriver >( vr::TrackedControllerRole_RightHand );
-
-	// Now we need to tell vrserver about our controllers.
-	// The first argument is the serial number of the device, which must be unique across all devices.
-	// We get it from our driver settings when we instantiate,
-	// And can pass it out of the function with MyGetSerialNumber().
-	// Let's add the left hand controller first (there isn't a specific order).
-	// make sure we actually managed to create the device.
-	// TrackedDeviceAdded returning true means we have had our device added to SteamVR.
-	if ( !vr::VRServerDriverHost()->TrackedDeviceAdded( my_left_controller_device_->MyGetSerialNumber().c_str(), vr::TrackedDeviceClass_Controller, my_left_controller_device_.get() ) )
+	const unsigned int number_of_trackers = 2;
+	for ( unsigned int i = 0; i < number_of_trackers; i++ )
 	{
-		DriverLog( "Failed to create left controller device!" );
-		// We failed? Return early.
-		return vr::VRInitError_Driver_Unknown;
-	}
+		std::unique_ptr< MyTrackerDeviceDriver > tracker_device = std::make_unique< MyTrackerDeviceDriver >( i );
 
+		// Now we need to tell vrserver about our controllers.
+		// The first argument is the serial number of the device, which must be unique across all devices.
+		// We get it from our driver settings when we instantiate,
+		// And can pass it out of the function with MyGetSerialNumber().
+		// Let's add the left hand controller first (there isn't a specific order).
+		// make sure we actually managed to create the device.
+		// TrackedDeviceAdded returning true means we have had our device added to SteamVR.
+		if ( !vr::VRServerDriverHost()->TrackedDeviceAdded( tracker_device->MyGetSerialNumber().c_str(),
+				 vr::TrackedDeviceClass_GenericTracker, tracker_device.get() ) )
+		{
+			DriverLog( "Failed to create left controller device!" );
+			// We failed? Return early.
+			return vr::VRInitError_Driver_Unknown;
+		}
 
-	// Now, the right hand
-	// Make sure we actually managed to create the device.
-	// TrackedDeviceAdded returning true means we have had our device added to SteamVR.
-	if ( !vr::VRServerDriverHost()->TrackedDeviceAdded( my_right_controller_device_->MyGetSerialNumber().c_str(), vr::TrackedDeviceClass_Controller, my_right_controller_device_.get() ) )
-	{
-		DriverLog( "Failed to create right controller device!" );
-		// We failed? Return early.
-		return vr::VRInitError_Driver_Unknown;
+		my_tracker_devices_.emplace_back( std::move( tracker_device ) );
 	}
 
 	return vr::VRInitError_None;
@@ -72,28 +64,18 @@ bool MyDeviceProvider::ShouldBlockStandbyMode()
 void MyDeviceProvider::RunFrame()
 {
 	// call our devices to run a frame
-	if ( my_left_controller_device_ != nullptr )
+	for ( const auto &tracker : my_tracker_devices_ )
 	{
-		my_left_controller_device_->MyRunFrame();
+		tracker->MyRunFrame();
 	}
 
-	if ( my_right_controller_device_ != nullptr )
-	{
-		my_right_controller_device_->MyRunFrame();
-	}
-
-	//Now, process events that were submitted for this frame.
+	// Now, process events that were submitted for this frame.
 	vr::VREvent_t vrevent{};
 	while ( vr::VRServerDriverHost()->PollNextEvent( &vrevent, sizeof( vr::VREvent_t ) ) )
 	{
-		if ( my_left_controller_device_ != nullptr )
+		for ( const auto &tracker : my_tracker_devices_ )
 		{
-			my_left_controller_device_->MyProcessEvent( vrevent );
-		}
-
-		if ( my_right_controller_device_ != nullptr )
-		{
-			my_right_controller_device_->MyProcessEvent( vrevent );
+			tracker->MyProcessEvent( vrevent );
 		}
 	}
 }
@@ -121,7 +103,9 @@ void MyDeviceProvider::LeaveStandby()
 //-----------------------------------------------------------------------------
 void MyDeviceProvider::Cleanup()
 {
-	// Our controller devices will have already deactivated. Let's now destroy them.
-	my_left_controller_device_ = nullptr;
-	my_right_controller_device_ = nullptr;
+	// Our tracker devices will have already deactivated. Let's now destroy them.
+	for ( auto &tracker : my_tracker_devices_ )
+	{
+		tracker = nullptr;
+	}
 }
