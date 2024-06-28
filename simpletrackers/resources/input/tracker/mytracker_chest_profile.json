@@ -4,6 +4,14 @@
   "device_class": "TrackedDeviceClass_GenericTracker",
   "driver_name" : "simpletrackers",
   "input_bindingui_mode": "single_device",
+  "input_bindingui_left" :
+  {
+    "image": "{indexcontroller}/icons/indexcontroller_left.svg"
+  },
+  "input_bindingui_right" :
+  {
+    "image": "{indexcontroller}/icons/indexcontroller_right.svg"
+  },
   "remapping" : "{simpletrackers}/input/tracker/mytracker_chest_remapping.json",
   "input_source": {
     "/pose/simplechestpose": {
@@ -22,6 +30,7 @@
     },
     "/input/grip" : {
         "type" : "button",
+		"click" : true,
 		"order" :  3,
         "binding_image_point" : [ 210, 100 ]
     }
